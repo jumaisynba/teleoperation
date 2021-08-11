@@ -1,4 +1,9 @@
 float32 ms_error 
-float32 y_desired
-float32 y_sensed
-float32 x_value
+float64 force_desired
+float32 force_event
+float64 force_weiss
+float32 force_robot
+float32 force_weiss2
+float64 delta_z
+float32 force_AR_desired
+float32 force_AR_applied

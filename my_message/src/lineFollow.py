@@ -32,6 +32,8 @@ class Visualiser:
         self.x_data, self.y_data = [0] , [0]
         self.y_desired_data, self.x_desired_data = [0] , [0] 
 
+        self.count=0
+
         
     def plot_init(self, dt = Ts):
         self.dt = dt
@@ -43,8 +45,8 @@ class Visualiser:
 
     def odom_callback(self, msg):
         self.force_data = msg.data
-        self.y_data.append(self.force_data)
-        print(self.force_data)
+        self.y_data.append(-self.force_data)
+        #print(self.force_data)
         x_index = len(self.x_data)
       
         x_index2 = 2500+x_index
@@ -52,7 +54,7 @@ class Visualiser:
         if x_index <2500 or np.sin((x_index2/fs)*2*np.pi*f/100)*6<0:
             self.y_desired_data.append(0)
         else:
-            self.y_desired_data.append(np.sin((x_index2/fs)*2*np.pi*f/100)*6)
+            self.y_desired_data.append(-np.sin((x_index2/fs)*2*np.pi*f/100)*6)
 
         self.x_desired_data.append(x_index2+1)
         self.x_data.append(x_index+1)
@@ -64,42 +66,41 @@ class Visualiser:
         squared_dif = dif**2
 
         self.sum = self.sum + squared_dif
-        if x_index!=0:
-            MSE = self.sum/x_index
+        #if x_index!=0:
+        #    MSE = self.sum/x_index
             #print(MSE)
             #print("actual data:"+ str(self.y_data[x_index]))
             #print("desired data:"+ str(self.y_desired_data[x_index]))
-        pub = rospy.Publisher('force_data', GraphData, queue_size=1)
-        msg = GraphData()
-        msg.ms_error = round(MSE,3)
-        msg.y_desired = self.y_desired_data[x_index]
-        msg.y_sensed = self.y_data[x_index]
-        msg.x_value = x_index/500
-        pub.publish(msg)
+        #pub = rospy.Publisher('force_data', GraphData, queue_size=1)
+        #msg2 = GraphData()
+        #msg2.ms_error = round(MSE,3)
+        #msg2.y_desired = self.y_desired_data[x_index]
+        #msg2.y_sensed = self.y_data[x_index]
+        #msg2.x_value = x_index/500
+        #pub2.publish(msg)
 
 
     
     def update_plot(self, frame):
+        
+        self.count+=1
         lastt=self.x_data[-1]
         if continous:
             if lastt >self.x_data[0]+self.maxt/2:
                 self.ax.set_xlim(lastt - self.maxt/2,lastt + self.maxt/2)
         t = self.x_data[-1] +self.dt
         self.x_data.append(t)
-        self.y_data.append(self.force_data)
+        self.y_data.append(-self.force_data)
 
 
         t2 = self.x_desired_data[-1]+self.dt
         if t < 2500 or np.sin((t2/fs)*2*np.pi*f/100)*6<0:
                 self.y_desired_data.append(0)
         else:
-            self.y_desired_data.append(np.sin((t2/fs)*2*np.pi*f/100)*6)
+            self.y_desired_data.append(-np.sin((t2/fs)*2*np.pi*f/100)*6)
         self.x_desired_data.append(t2)
-        
+          
         self.ln2.set_data(self.x_desired_data, self.y_desired_data)
-
-        self.ln.set_data(self.x_data, self.y_data)
-
 
 
         return self.ln , self.ln2
@@ -108,6 +109,8 @@ class Visualiser:
 rospy.init_node('force_visual_node')
 vis = Visualiser()
 sub = rospy.Subscriber('/chatter', Float32, vis.odom_callback)
+
+#ani = FuncAnimation(vis.fig, vis.update_plot, interval= 1)
 
 ani = FuncAnimation(vis.fig, vis.update_plot, init_func=vis.plot_init , interval= 1)
 plt.show(block=True) 
